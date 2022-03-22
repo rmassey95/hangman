@@ -23,7 +23,10 @@ puts word
 
 display = "_"*word.length
 
-while trys <= 8 do
+incorrect_guesses = Array.new()
+correct_guesses = Array.new()
+
+while trys <= 6 do
 
   puts "Enter a letter: "
   guess = gets.chomp
@@ -40,8 +43,18 @@ while trys <= 8 do
       end
     end
   else
+    trys += 1
     guesses[guess] = 0
   end
+
+  if guesses[guess] > 0
+    correct_guesses.push(guess)
+  else
+    incorrect_guesses.push(guess)
+  end
+
+  puts "INCORRECT GUESSES: #{incorrect_guesses}"
+  puts "CORRECT GUESSES: #{correct_guesses}"
 
   if guesses.values.sum == word.length
     puts "WIN"
@@ -51,8 +64,6 @@ while trys <= 8 do
     puts "NOT"
   end
   puts display
-
-  trys += 1
 
 end
 
