@@ -1,76 +1,151 @@
-def check_word(word)
-  if word.length < 5 || word.length > 12
-    return false
-  else
-    return true
+class Game
+  attr_accessor :word, :guesses, :display, :incorrect_guesses, :correct_guesses, :trys
+
+  def initialize(guesses={},display="",word="",incorrect_guesses=[],correct_guesses=[], trys=1)
+    @guesses = guesses
+    @display = display
+    @guess = ""
+    @incorrect_guesses = incorrect_guesses
+    @correct_guesses = correct_guesses
+    @trys = trys
+    @word = word
+  end
+  public
+
+  def player_guess()
+    puts "Enter a letter or type save to 'save' progress: "
+    @guess = gets.chomp.downcase
+    if @guess == 'save'
+      save_game()
+    else
+      return check_guess()
+    end
+  end
+
+  def get_new_word(all_words)
+    good_word = false
+    until good_word do
+      @word = all_words[Random.rand(0..10000)].chomp
+      good_word = check_word(word)
+    end
+    @display = "_"*@word.length
+  end
+
+  def check_win()
+    if @guesses.values.sum == @word.length
+      puts "YOU GOT THE WORD! IT WAS #{@word}"
+      return true
+    else
+      return false
+    end
+  end
+
+  private
+
+  def save_game()
+    puts "What would you like to call the file? "
+    fname = gets.chomp
+    save = File.open("./saved_games/#{fname}.txt", 'w')
+    save.puts @guesses
+    save.puts @display
+    save.puts @word
+    save.puts @incorrect_guesses.join('')
+    save.puts @correct_guesses.join('')
+    save.puts @trys
+    save.close
+    exit
+  end
+
+  def check_guess()
+    if @word.include?(@guess)
+      @word.split('').each_index do |index|
+        if @word[index] == @guess
+          @display[index] = @guess
+          if @guesses[@guess] == nil
+            @correct_guesses.push(@guess)
+            @guesses[@guess] = 1
+          else
+            @guesses[@guess] += 1
+          end
+        end
+      end
+      return true
+    else
+      @incorrect_guesses.push(@guess)
+      @guesses[@guess] = 0
+      return false
+    end
+  end
+
+  def check_word(word)
+    if word.length < 5 || word.length > 12
+      return false
+    else
+      return true
+    end
   end
 end
 
 word_file = File.open('google-10000-english-no-swears.txt', 'r')
-
 all_words = word_file.readlines
-good_word = false
-trys = 1
+
 win = false
 
-guesses = Hash.new
-until good_word do
-  word = all_words[Random.rand(0..10000)].chomp
-  good_word = check_word(word)
-end
+puts "Type 'load' to load a saved game or 'new' to run a new game"
+choice = gets.chomp
 
-puts word
-
-display = "_"*word.length
-
-incorrect_guesses = Array.new()
-correct_guesses = Array.new()
-
-while trys <= 6 do
-
-  puts "Enter a letter: "
-  guess = gets.chomp
-
-  if word.include?(guess)
-    word.split('').each_index do |index|
-      if word[index] == guess
-        display[index] = guess
-        if guesses[guess] == nil
-          guesses[guess] = 1
-        else
-          guesses[guess] += 1
-        end
-      end
-    end
-  else
-    trys += 1
-    guesses[guess] = 0
+if choice == 'load'
+  puts "Saved Games: "
+  Dir.each_child("./saved_games") do |fname|
+    puts fname
   end
+  puts "What file do you want to load? "
+  fname = gets.chomp
+  load_game = File.open("./saved_games/#{fname}.txt")
+  guesses = eval(load_game.readline)
+  display = load_game.readline.chomp
+  word = load_game.readline.chomp
+  incorrect_guesses = load_game.readline.chomp.split('')
+  correct_guesses = load_game.readline.chomp.split('')
+  trys = load_game.readline.to_i
 
-  if guesses[guess] > 0
-    correct_guesses.push(guess)
-  else
-    incorrect_guesses.push(guess)
-  end
+  load_game.close
 
-  puts "INCORRECT GUESSES: #{incorrect_guesses}"
-  puts "CORRECT GUESSES: #{correct_guesses}"
-
-  if guesses.values.sum == word.length
-    puts "WIN"
-    win = true
-    break
-  else
-    puts "NOT"
-  end
-  puts display
-
-end
-
-if win
-  puts "YOU GOT THE WORD! IT WAS #{word}"
+  game = Game.new(guesses, display, word, incorrect_guesses, correct_guesses, trys)
+  puts game.word
+  puts game.display
 else
-  puts "YOU DIDN'T GET THE WORD"
+  game = Game.new()
+  game.get_new_word(all_words)
+  puts game.word
+end
+
+while true do
+  while game.trys <= 6 do
+
+    unless game.player_guess()
+      game.trys += 1
+    end
+
+    puts "INCORRECT GUESSES: #{game.incorrect_guesses.join(' ')}"
+    puts "CORRECT GUESSES: #{game.correct_guesses.join(' ')}"
+
+    if game.check_win()
+      break
+    end
+
+    puts game.display
+
+  end
+
+  puts "Play Again? 'y' or 'n'"
+  if (gets.chomp) == "n"
+    break
+  else  
+    game = Game.new()
+    game.get_new_word(all_words)
+    puts game.word
+  end
 end
 
 word_file.close
