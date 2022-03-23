@@ -13,8 +13,15 @@ class Game
   public
 
   def player_guess()
-    puts "Enter a letter or type save to 'save' progress: "
-    @guess = gets.chomp.downcase
+    while true do
+      puts "Enter a letter or type save to 'save' progress: "
+      @guess = gets.chomp.downcase
+      if @guesses.keys.include?(@guess) || @guess != 'save' && @guess.length > 1
+        next
+      else
+        break
+      end
+    end
     if @guess == 'save'
       save_game()
     else
@@ -89,8 +96,6 @@ end
 word_file = File.open('google-10000-english-no-swears.txt', 'r')
 all_words = word_file.readlines
 
-win = false
-
 puts "Type 'load' to load a saved game or 'new' to run a new game"
 choice = gets.chomp
 
@@ -114,6 +119,8 @@ if choice == 'load'
   game = Game.new(guesses, display, word, incorrect_guesses, correct_guesses, trys)
   puts game.word
   puts game.display
+  puts "INCORRECT GUESSES: #{game.incorrect_guesses.join(' ')}"
+  puts "CORRECT GUESSES: #{game.correct_guesses.join(' ')}"
 else
   game = Game.new()
   game.get_new_word(all_words)
@@ -121,6 +128,8 @@ else
 end
 
 while true do
+  win = false
+
   while game.trys <= 6 do
 
     unless game.player_guess()
@@ -131,12 +140,14 @@ while true do
     puts "CORRECT GUESSES: #{game.correct_guesses.join(' ')}"
 
     if game.check_win()
+      win = true
       break
     end
 
     puts game.display
 
   end
+  puts "YOU LOST! THE WORD WAS #{game.word}" unless win
 
   puts "Play Again? 'y' or 'n'"
   if (gets.chomp) == "n"
